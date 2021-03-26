@@ -1,4 +1,46 @@
-| Icon | Parameter | Description 
+# Selection of Material Design Icons for hasp-lvgl
+
+I've made a selection of practical icons from [Material Design Icons](https://materialdesignicons.com/). These can't be included directly whit alphanumeric fonts because their location on the codeplane starts at F0001 which cannot be addressed by hasp-lvgl. The glyphs have been moved down to the ascii addresses but this conflicts with normal characters, but at least they can be used.
+
+Conflict is not a problem unless you don't use the same font size number for text and icons. I've prepared the icon font files for inclusion in the firmware at sizes 26, 30 and 34. These can be added in addition to the existing fonts so one can use a combination of these and the pre-included fontawesome icons too.
+
+### How to add the icons to the firmware
+
+Example below for font size 26.
+
+Copy `materialdesign_26.c` file to the `hasp-lvgl/src/font` directory. 
+
+Edit the file `hasp-lvgl/include/lv_conf_v7.h`:
+
+Search for the area where the original fonts are declared, like `#define LV_FONT_CUSTOM_28`. Add your icon font with:
+```
+#define LV_FONT_CUSTOM_26     LV_FONT_DECLARE(materialdesign_26)
+```
+Also add to `LV_FONT_CUSTOM_DECLARE` your custom font, should look something like this:
+```
+#define LV_FONT_CUSTOM_DECLARE LV_FONT_CUSTOM_12 \
+                               LV_FONT_CUSTOM_16 \
+                               LV_FONT_CUSTOM_22 \
+                               LV_FONT_CUSTOM_28 \
+                               LV_FONT_CUSTOM_26 \
+```
+
+
+Edit the file `hasp-lvgl/src/hasp/hasp_attribute.cpp`:
+
+Search for the function `static lv_font_t* haspPayloadToFont(const char* payload)` and add your custom-sized 26 font:
+```
+#ifdef LV_FONT_CUSTOM_26
+        case 26:
+            LOG_WARNING(TAG_ATTR, "%s %d %x", __FILE__, __LINE__, materialdesign_26);
+            return &materialdesign_26;
+#endif
+```
+Wacth for proper `#endif`s at the end of the function!!!
+
+Compile the firnware with platformio as usual. To display the desired icon, simply use your custom font size (in our example 26): `p4b1.text_font=26`, and in the `jsonl` command specify the escaped character code from the table below:
+
+| Icon | Character code | Description 
 | -- | -- | --
 | ![kép](https://user-images.githubusercontent.com/1550668/112601640-f96a9780-8e12-11eb-8b5e-9e139cdce82c.png) | \u0065 | arrow down
 | ![kép](https://user-images.githubusercontent.com/1550668/112602206-ab09c880-8e13-11eb-9a01-ac8ae774375e.png) | \u007d | arrow up
