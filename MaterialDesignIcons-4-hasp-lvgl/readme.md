@@ -8,7 +8,7 @@
 
 I've made a selection of practical icons from [Material Design Icons](https://materialdesignicons.com/). These can't be included directly whith alphanumeric fonts in the same file because their location on the codeplane starts way up at F0001 which cannot be addressed by hasp-lvgl. The glyphs have been moved down to the ascii address space but this would conflict with the normal characters.
 
-Conflict is not a problem unless you don't use the same font size number for text and icons. I've prepared the icon font files for inclusion in the firmware at sizes 26, 30 and 34. These can be added in addition to the existing fonts so one can use a combination of these and the pre-included fontawesome icons too.
+Conflict is not a problem unless you don't use the same font size number for text and icons. I've prepared the icon font files for inclusion in the firmware at sizes 26, 30 and 34. These can be added in addition to the existing fonts so one can use a combination of these and the pre-included fontawesome icons too.<br>Tested on Lanbon L8 with hasp-lvgl 0.4.0.
 
 ### How to add the icons to the firmware
 
@@ -44,7 +44,7 @@ Search for the function `static lv_font_t* haspPayloadToFont(const char* payload
 ```
 Wacth for proper `#endif`s at the end of the function!!!
 
-Compile the firnware with platformio as usual. To display the desired icon, simply use your custom font size (in our example 26): `p4b1.text_font=26`, and in the `jsonl` command specify the escaped character code from the table below:
+Compile the firnware with platformio as usual, and flash it OTA to your device. To display the desired icon, simply use your custom font size (in our example 26): `p4b1.text_font=26`, and in the `jsonl` command specify the escaped character code from the table below:
 
 | Icon | Character code | Description 
 | -- | -- | --
