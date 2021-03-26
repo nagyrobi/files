@@ -67,8 +67,8 @@ Compile the firnware with platformio as usual, and flash it OTA to your device. 
 | ![kép](https://user-images.githubusercontent.com/1550668/112604191-2a989700-8e16-11eb-81fd-6b485910d68e.png) | \u0435 | plus
 | ![kép](https://user-images.githubusercontent.com/1550668/112604245-33896880-8e16-11eb-843f-f4d20f5d7686.png) | \u0394 | minus
 | ![kép](https://user-images.githubusercontent.com/1550668/112607306-5b2e0000-8e19-11eb-83d3-cac0094e24b1.png) | \u0437 | plus-circle
-| ![kép](https://user-images.githubusercontent.com/1550668/112607352-6719c200-8e19-11eb-90b9-297fc9166dd6.png) | \u0436 | plus-box
 | ![kép](https://user-images.githubusercontent.com/1550668/112607391-7436b100-8e19-11eb-87b1-fbf7d9aabcc2.png) | \u0396 | minus-circle
+| ![kép](https://user-images.githubusercontent.com/1550668/112607352-6719c200-8e19-11eb-90b9-297fc9166dd6.png) | \u0436 | plus-box
 | ![kép](https://user-images.githubusercontent.com/1550668/112607434-7f89dc80-8e19-11eb-8eeb-4f1d18daac4f.png) | \u0395 | minus-box
 | ![kép](https://user-images.githubusercontent.com/1550668/112606281-79473080-8e18-11eb-9434-628d816637ba.png) | \u014c | check
 | ![kép](https://user-images.githubusercontent.com/1550668/112606311-82d09880-8e18-11eb-99b9-911ff7173432.png) | \u0601 | check-circle-outline
