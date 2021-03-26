@@ -1,41 +1,41 @@
 | glyph | Parameter | Description 
 | -- | -- | --
 | ![kép](https://user-images.githubusercontent.com/1550668/112601640-f96a9780-8e12-11eb-8b5e-9e139cdce82c.png) | \u0065 | arrow down
-|  | \u007d | arrow up
-|  | \u006d | arrow left
-|  | \u0074 | arrow right
-|  | \u0160 | chevron down
-|  | \u0161 | chevron left
-|  | \u0162 | chevron right
-|  | \u0163 | chevron up
-|  | \u0355 | lightbulb
-|  | \u0356 | lightbulb-outline
-|  | \u0458 | heater-on
-|  | \u0af7 | heater
-|  | \u0af8 | heater-off
-|  | \u07e0 | arrow down plated
-|  | \u06e3 | arrow up plated
-|  | \u06e1 | arrow left plated
-|  | \u06e2 | arrow right plated
-|  | \u06f9 | garage closed
-|  | \u06fa | garage open
-|  | \u113c | window shutter closed
-|  | \u113d | window shutter warning
-|  | \u113e | window shutter open
-|  | \u04fb | stop
-|  | \u06c1 | home-outline
-|  | \u037d | menu-down
-|  | \u037e | menu-left
-|  | \u037f | menu-right
-|  | \u0380 | menu-up
-|  | \u042e | play-pause
-|  | \u042a | play
-|  | \u0404 | pause
-|  | \u04fb | stop
-|  | \u0231 | fast-forward
-|  | \u047f | rewind
-|  | \u04cd | skip-next
-|  | \u04ce | skip-previous
+| ![kép](https://user-images.githubusercontent.com/1550668/112602206-ab09c880-8e13-11eb-9a01-ac8ae774375e.png) | \u007d | arrow up
+| ![kép](https://user-images.githubusercontent.com/1550668/112602286-c1b01f80-8e13-11eb-86c1-151297c42082.png) | \u006d | arrow left
+| ![kép](https://user-images.githubusercontent.com/1550668/112602326-cecd0e80-8e13-11eb-84a4-89794d128165.png) | \u0074 | arrow right
+| ![kép](https://user-images.githubusercontent.com/1550668/112602394-e5736580-8e13-11eb-98af-59081b367f7a.png) | \u0160 | chevron down
+| ![kép](https://user-images.githubusercontent.com/1550668/112602450-fd4ae980-8e13-11eb-9651-606014d168a3.png) | \u0161 | chevron left
+| ![kép](https://user-images.githubusercontent.com/1550668/112602478-0936ab80-8e14-11eb-9abe-a18becdc1731.png) | \u0162 | chevron right
+| ![kép](https://user-images.githubusercontent.com/1550668/112602516-1358aa00-8e14-11eb-83d3-179428948db5.png) | \u0163 | chevron up
+| ![kép](https://user-images.githubusercontent.com/1550668/112602593-2e2b1e80-8e14-11eb-9a46-b6beaf1ac37d.png) | \u0355 | lightbulb
+| ![kép](https://user-images.githubusercontent.com/1550668/112602634-3aaf7700-8e14-11eb-802e-81abd2af1a8a.png) | \u0356 | lightbulb-outline
+| ![kép](https://user-images.githubusercontent.com/1550668/112602682-49962980-8e14-11eb-8f78-ddabc6e616cb.png) | \u0458 | heater-on
+| ![kép](https://user-images.githubusercontent.com/1550668/112602722-53b82800-8e14-11eb-844b-dc1217efc0cd.png) | \u0af7 | heater
+| ![kép](https://user-images.githubusercontent.com/1550668/112602750-5dda2680-8e14-11eb-86dd-4c9672c9a345.png) | \u0af8 | heater-off
+| ![kép](https://user-images.githubusercontent.com/1550668/112602997-a85ba300-8e14-11eb-9f0a-7d7acd5e9ab6.png) | \u07e0 | desktop-classic
+| ![kép](https://user-images.githubusercontent.com/1550668/112603048-bc9fa000-8e14-11eb-92fc-5f9894abffa1.png) | \u06e3 | arrow-up-box
+| ![kép](https://user-images.githubusercontent.com/1550668/112603107-d04b0680-8e14-11eb-964a-a3392fddf94c.png) | \u06e1 | arrow left plated
+| ![kép](https://user-images.githubusercontent.com/1550668/112603142-de992280-8e14-11eb-9bac-62dd62137aa1.png) | \u06e2 | arrow right plated
+| ![kép](https://user-images.githubusercontent.com/1550668/112603171-ea84e480-8e14-11eb-9224-47e584a87d1c.png) | \u06f9 | garage closed
+| ![kép](https://user-images.githubusercontent.com/1550668/112603197-f40e4c80-8e14-11eb-8304-4e3b5595433f.png) | \u06fa | garage open
+| ![kép](https://user-images.githubusercontent.com/1550668/112603223-fec8e180-8e14-11eb-93dd-769c84d478b0.png) | \u113c | window shutter closed
+| ![kép](https://user-images.githubusercontent.com/1550668/112603260-0ab4a380-8e15-11eb-85c5-b1559d985f5d.png) | \u113d | window shutter warning
+| ![kép](https://user-images.githubusercontent.com/1550668/112603287-156f3880-8e15-11eb-9248-239b45f2c91d.png) | \u113e | window shutter open
+| ![kép](https://user-images.githubusercontent.com/1550668/112603353-2d46bc80-8e15-11eb-8953-f7c249818634.png) | \u04fb | stop
+| ![kép](https://user-images.githubusercontent.com/1550668/112603389-38015180-8e15-11eb-8907-933f5a39e6b5.png) | \u06c1 | home-outline
+| ![kép](https://user-images.githubusercontent.com/1550668/112603414-42bbe680-8e15-11eb-9217-3b846d89d9df.png) | \u037d | menu-down
+| ![kép](https://user-images.githubusercontent.com/1550668/112603445-4e0f1200-8e15-11eb-8b1d-b971da582020.png) | \u037e | menu-left
+| ![kép](https://user-images.githubusercontent.com/1550668/112603469-58311080-8e15-11eb-8e1e-b2e11bb6040a.png) | \u037f | menu-right
+| ![kép](https://user-images.githubusercontent.com/1550668/112603495-63843c00-8e15-11eb-8434-3a0925359dbf.png) | \u0380 | menu-up
+| ![kép](https://user-images.githubusercontent.com/1550668/112603529-6bdc7700-8e15-11eb-86fe-e11e703f8f0d.png) | \u042e | play-pause
+| ![kép](https://user-images.githubusercontent.com/1550668/112603555-75fe7580-8e15-11eb-91ac-51eb3b3a2c74.png) | \u042a | play
+| ![kép](https://user-images.githubusercontent.com/1550668/112603579-7eef4700-8e15-11eb-9774-7a5c033c4213.png) | \u0404 | pause
+| ![kép](https://user-images.githubusercontent.com/1550668/112603634-8f072680-8e15-11eb-97b8-f03746b0c5ca.png) | \u04fb | stop
+| ![kép](https://user-images.githubusercontent.com/1550668/112603660-98908e80-8e15-11eb-9ada-365515c9fa29.png) | \u0231 | fast-forward
+| ![kép](https://user-images.githubusercontent.com/1550668/112603689-a3e3ba00-8e15-11eb-80f9-925e709193d0.png) | \u047f | rewind
+| ![kép](https://user-images.githubusercontent.com/1550668/112603724-ae05b880-8e15-11eb-93a8-473dc5e1fc4c.png) | \u04cd | skip-next
+| ![kép](https://user-images.githubusercontent.com/1550668/112603763-b6f68a00-8e15-11eb-98f6-ce3f58450405.png) | \u04ce | skip-previous
 |  | \u077a | music
 |  | \u059e | volume-high
 |  | \u059f | volume-low
