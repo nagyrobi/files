@@ -1,5 +1,11 @@
 # Selection of Material Design Icons for hasp-lvgl
 
+![kép](https://user-images.githubusercontent.com/1550668/112620845-53765780-8e29-11eb-8da8-3f1ceb934ca9.png)<br>
+![kép](https://user-images.githubusercontent.com/1550668/112620966-786aca80-8e29-11eb-8e9c-228f794586bb.png)<br>
+![kép](https://user-images.githubusercontent.com/1550668/112621038-920c1200-8e29-11eb-97c0-0a9d162a4dcd.png)
+
+
+
 I've made a selection of practical icons from [Material Design Icons](https://materialdesignicons.com/). These can't be included directly whith alphanumeric fonts in the same file because their location on the codeplane starts way up at F0001 which cannot be addressed by hasp-lvgl. The glyphs have been moved down to the ascii address space but this would conflict with the normal characters.
 
 Conflict is not a problem unless you don't use the same font size number for text and icons. I've prepared the icon font files for inclusion in the firmware at sizes 26, 30 and 34. These can be added in addition to the existing fonts so one can use a combination of these and the pre-included fontawesome icons too.
