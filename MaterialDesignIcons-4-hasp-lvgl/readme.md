@@ -1,10 +1,8 @@
-# Selection of Material Design Icons for hasp-lvgl
+# Selection of Material Design Icons for openHASP
 
 ![kép](https://user-images.githubusercontent.com/1550668/112620845-53765780-8e29-11eb-8da8-3f1ceb934ca9.png)<br>
 ![kép](https://user-images.githubusercontent.com/1550668/112620966-786aca80-8e29-11eb-8e9c-228f794586bb.png)<br>
 ![kép](https://user-images.githubusercontent.com/1550668/112621038-920c1200-8e29-11eb-97c0-0a9d162a4dcd.png)
-
-
 
 I've made a selection of practical icons from [Material Design Icons](https://materialdesignicons.com/). These can't be included directly whith alphanumeric fonts in the same file because their location on the codeplane starts way up above 0x10000 which cannot be addressed by hasp-lvgl. The glyphs have been moved down to the ascii address space but this would conflict with the normal characters.
 
