@@ -117,6 +117,11 @@ Compile the firnware with platformio as usual, and flash it OTA to your device. 
 | ![kép](https://user-images.githubusercontent.com/1550668/112603689-a3e3ba00-8e15-11eb-80f9-925e709193d0.png) | \u047f | rewind
 | ![kép](https://user-images.githubusercontent.com/1550668/112603724-ae05b880-8e15-11eb-93a8-473dc5e1fc4c.png) | \u04cd | skip-next
 | ![kép](https://user-images.githubusercontent.com/1550668/112603763-b6f68a00-8e15-11eb-98f6-ce3f58450405.png) | \u04ce | skip-previous
+| ![kép](https://user-images.githubusercontent.com/1550668/113571517-d0b67f00-9616-11eb-816f-810a6b55b6d5.png) | \u0476 | repeat
+| ![kép](https://user-images.githubusercontent.com/1550668/113571532-d744f680-9616-11eb-8ed5-26dbc23050fb.png) | \u0477 | repeat-off
+| ![kép](https://user-images.githubusercontent.com/1550668/113571554-df049b00-9616-11eb-9697-c4742e0ffcad.png) | \u0478 | repeat-once
+| ![kép](https://user-images.githubusercontent.com/1550668/113571567-e9bf3000-9616-11eb-816d-e05be9aa0f5b.png) | \u04BD | shuffle
+| ![kép](https://user-images.githubusercontent.com/1550668/113571584-f2176b00-9616-11eb-82f4-7f799e3cbaa6.png) | \u04BE | shuffle-disabled
 | ![kép](https://user-images.githubusercontent.com/1550668/112603885-df7e8400-8e15-11eb-891f-73e9e6de7a35.png) | \u077a | music
 | ![kép](https://user-images.githubusercontent.com/1550668/112603943-ef966380-8e15-11eb-99f7-e05503f8af8c.png) | \u059e | volume-high
 | ![kép](https://user-images.githubusercontent.com/1550668/112603974-f7ee9e80-8e15-11eb-8430-03dbd224356f.png) | \u059f | volume-low
@@ -137,6 +142,8 @@ Compile the firnware with platformio as usual, and flash it OTA to your device. 
 | ![kép](https://user-images.githubusercontent.com/1550668/112604991-199c5580-8e17-11eb-9fa6-2ef85762c361.png) | \u05c9 | wifi
 | ![kép](https://user-images.githubusercontent.com/1550668/112609934-6c2c4080-8e1c-11eb-9e82-142c1ae58f0d.png) | \u1139 | antenna
 | ![kép](https://user-images.githubusercontent.com/1550668/112604895-fa9dc380-8e16-11eb-99de-afa9743f9913.png) | \u04c2 | signal
+| ![kép](https://user-images.githubusercontent.com/1550668/113571476-bda3af00-9616-11eb-9f52-0d46c8b2e376.png) | \u00CF | bluetooth
+| ![kép](https://user-images.githubusercontent.com/1550668/113571502-c72d1700-9616-11eb-9779-7536d38f8ece.png) | \u00D0 | bluetooth-audio
 | ![kép](https://user-images.githubusercontent.com/1550668/112605026-2325bd80-8e17-11eb-8d24-e2311f203923.png) | \u09c0 | shower-bath
 | ![kép](https://user-images.githubusercontent.com/1550668/112605058-2c168f00-8e17-11eb-91ca-efe8c472c220.png) | \u0303 | bed
 | ![kép](https://user-images.githubusercontent.com/1550668/112605096-3769ba80-8e17-11eb-893c-4f8767629e0c.png) | \u12f1 | sleep
@@ -173,6 +180,7 @@ Compile the firnware with platformio as usual, and flash it OTA to your device. 
 | ![kép](https://user-images.githubusercontent.com/1550668/112607838-ee673580-8e19-11eb-8fb1-8994d9d7b562.png) | \u02f1 | heart
 | ![kép](https://user-images.githubusercontent.com/1550668/112607157-3043ac00-8e19-11eb-8384-03cc74def418.png) | \u04ee | star
 | ![kép](https://user-images.githubusercontent.com/1550668/112607225-43ef1280-8e19-11eb-9ade-3771c76b21f5.png) | \u0851 | shape
+| ![kép](https://user-images.githubusercontent.com/1550668/113571610-fc396980-9616-11eb-973e-f0c995878b5c.png) | \u0EB5 | circle-double
 | ![kép](https://user-images.githubusercontent.com/1550668/112606251-6fbdc880-8e18-11eb-9baf-dbf838b0ccd1.png) | \u008e | backspace
 | ![kép](https://user-images.githubusercontent.com/1550668/112606479-b0b5dd00-8e18-11eb-9b78-e2337df013fc.png) | \u066a | human-greeting
 | ![kép](https://user-images.githubusercontent.com/1550668/112606655-ba3f4500-8e18-11eb-9b1a-efcfe21c49a5.png) | \u0024 | account
@@ -185,3 +193,4 @@ Compile the firnware with platformio as usual, and flash it OTA to your device. 
 | ![kép](https://user-images.githubusercontent.com/1550668/112607945-0c349a80-8e1a-11eb-82b4-bd205d172eba.png) | \u12c2 | battery-medium
 | ![kép](https://user-images.githubusercontent.com/1550668/112607986-16ef2f80-8e1a-11eb-98ff-570307067fe3.png) | \u12c3 | battery-high
 | ![kép](https://user-images.githubusercontent.com/1550668/112608017-21112e00-8e1a-11eb-9fa3-f2ce3f49550b.png) | \u0369 | magnify
+
