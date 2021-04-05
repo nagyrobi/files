@@ -44,7 +44,7 @@ Wacth for proper `#endif`s at the end of the function!!!
 
 Compile the firnware with platformio as usual, and flash it OTA to your device. To display the desired icon, simply use your custom font size (in our example 26): `p4b1.text_font=26`, and in the `jsonl` command specify the escaped, _shifted down_ character code from the table below:
 
-Icon  | Suggested<br>for default  | Character code<br>shifted down by EFFE0  | Original MDI Character code  | Description
+Icon  | Suggested<br>for default  | Character code<br>shifted down by EFFE0  | Original MDI<br>Character code  | Description
 --  | --  | --  | -- | --
 ![kép](https://user-images.githubusercontent.com/1550668/112601640-f96a9780-8e12-11eb-8b5e-9e139cdce82c.png)  | x  | \u0065  | 0xf0045  | arrow down
 ![kép](https://user-images.githubusercontent.com/1550668/112602206-ab09c880-8e13-11eb-9a01-ac8ae774375e.png)  | x  | \u007d  | 0xf005d  | arrow up
