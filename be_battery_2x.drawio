@@ -4,13 +4,13 @@
       <root>
         <mxCell id="0" />
         <mxCell id="1" parent="0" />
-        <mxCell id="6n2Xk3rfohlOiFn1K-yd-1" parent="1" style="whiteSpace=wrap;html=1;aspect=fixed;strokeWidth=2;" value="Inverter" vertex="1">
+        <mxCell id="6n2Xk3rfohlOiFn1K-yd-1" parent="1" style="whiteSpace=wrap;html=1;aspect=fixed;strokeWidth=2;fontSize=18;" value="Inverter" vertex="1">
           <mxGeometry height="80" width="80" x="400" y="40" as="geometry" />
         </mxCell>
-        <mxCell id="6n2Xk3rfohlOiFn1K-yd-2" parent="1" style="rounded=0;whiteSpace=wrap;html=1;strokeWidth=2;" value="Battery 1" vertex="1">
+        <mxCell id="6n2Xk3rfohlOiFn1K-yd-2" parent="1" style="rounded=0;whiteSpace=wrap;html=1;strokeWidth=2;fontSize=20;" value="Battery 1" vertex="1">
           <mxGeometry height="60" width="160" x="340" y="320" as="geometry" />
         </mxCell>
-        <mxCell id="6n2Xk3rfohlOiFn1K-yd-3" parent="1" style="rounded=0;whiteSpace=wrap;html=1;strokeWidth=2;" value="Battery 2" vertex="1">
+        <mxCell id="6n2Xk3rfohlOiFn1K-yd-3" parent="1" style="rounded=0;whiteSpace=wrap;html=1;strokeWidth=2;fontSize=20;" value="Battery 2" vertex="1">
           <mxGeometry height="60" width="160" x="580" y="320" as="geometry" />
         </mxCell>
         <mxCell id="6n2Xk3rfohlOiFn1K-yd-4" edge="1" parent="1" source="6n2Xk3rfohlOiFn1K-yd-2" style="endArrow=none;html=1;rounded=0;entryX=0.25;entryY=1;entryDx=0;entryDy=0;exitX=0.5;exitY=0;exitDx=0;exitDy=0;edgeStyle=orthogonalEdgeStyle;strokeColor=light-dark(#FF0000,#5E5C64);" target="6n2Xk3rfohlOiFn1K-yd-1" value="">
