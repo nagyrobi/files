@@ -1,6 +1,6 @@
 <mxfile host="app.diagrams.net">
   <diagram name="Page-1" id="tQAgQtPFKgaSuef7sOLE">
-    <mxGraphModel dx="534" dy="598" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" math="0" shadow="0">
+    <mxGraphModel dx="926" dy="1036" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" math="0" shadow="0">
       <root>
         <mxCell id="0" />
         <mxCell id="1" parent="0" />
@@ -16,7 +16,7 @@
         <mxCell id="3bDwJDDblhWV5rsylv6M-8" parent="1" style="rounded=0;whiteSpace=wrap;html=1;strokeWidth=2;fontSize=22;fontFamily=Helvetica;align=right;" value="2ⁿᵈ battery" vertex="1">
           <mxGeometry height="60" width="186" x="446" y="171" as="geometry" />
         </mxCell>
-        <mxCell id="3bDwJDDblhWV5rsylv6M-42" parent="1" style="rounded=1;whiteSpace=wrap;html=1;miterlimit=4;points=[[0,0,1,0,0],[0,0.083333,0,0,0],[0,0.166667,0,0,0],[0,0.25,1,0,0],[0,0.333333,0,0,0],[0,0.416667,0,0,0],[0,0.5,1,0,0],[0,0.583333,0,0,0],[0,0.666667,0,0,0],[0,0.75,1,0,0],[0,0.833333,0,0,0],[0,0.916667,0,0,0],[0,1,1,0,0],[0.125,0,0,0,0],[0.125,1,0,0,0],[0.25,0,1,0,0],[0.25,1,1,0,0],[0.375,0,0,0,0],[0.375,1,0,0,0],[0.5,0,1,0,0],[0.5,1,1,0,0],[0.625,0,0,0,0],[0.625,1,0,0,0],[0.75,0,1,0,0],[0.75,1,1,0,0],[0.875,0,0,0,0],[0.875,1,0,0,0],[1,0,1,0,0],[1,0.083333,0,0,0],[1,0.166667,0,0,0],[1,0.25,1,0,0],[1,0.333333,0,0,0],[1,0.416667,0,0,0],[1,0.5,1,0,0],[1,0.583333,0,0,0],[1,0.666667,0,0,0],[1,0.75,1,0,0],[1,0.833333,0,0,0],[1,0.916667,0,0,0],[1,1,1,0,0]];verticalAlign=bottom;" value="Battery Emulator" vertex="1">
+        <mxCell id="3bDwJDDblhWV5rsylv6M-42" parent="1" style="rounded=1;whiteSpace=wrap;html=1;miterlimit=4;points=[[0,0,1,0,0],[0,0.083333,0,0,0],[0,0.166667,0,0,0],[0,0.25,1,0,0],[0,0.333333,0,0,0],[0,0.416667,0,0,0],[0,0.5,1,0,0],[0,0.583333,0,0,0],[0,0.666667,0,0,0],[0,0.75,1,0,0],[0,0.833333,0,0,0],[0,0.916667,0,0,0],[0,1,1,0,0],[0.125,0,0,0,0],[0.125,1,0,0,0],[0.25,0,1,0,0],[0.25,1,1,0,0],[0.375,0,0,0,0],[0.375,1,0,0,0],[0.5,0,1,0,0],[0.5,1,1,0,0],[0.625,0,0,0,0],[0.625,1,0,0,0],[0.75,0,1,0,0],[0.75,1,1,0,0],[0.875,0,0,0,0],[0.875,1,0,0,0],[1,0,1,0,0],[1,0.083333,0,0,0],[1,0.166667,0,0,0],[1,0.25,1,0,0],[1,0.333333,0,0,0],[1,0.416667,0,0,0],[1,0.5,1,0,0],[1,0.583333,0,0,0],[1,0.666667,0,0,0],[1,0.75,1,0,0],[1,0.833333,0,0,0],[1,0.916667,0,0,0],[1,1,1,0,0]];verticalAlign=bottom;strokeWidth=2;fontStyle=1" value="Battery Emulator" vertex="1">
           <mxGeometry height="210" width="120" x="160" y="70" as="geometry" />
         </mxCell>
         <mxCell id="3bDwJDDblhWV5rsylv6M-46" parent="1" style="rounded=0;whiteSpace=wrap;html=1;" value="SSR" vertex="1">
