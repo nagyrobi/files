@@ -112,6 +112,13 @@ esphome:
       - script.execute:
           id: page_loaded
           page: 0
+      # The stored backlight level, whatever order the light and the number came up in.
+      - script.execute: wake_backlight
+      - lvgl.label.update:
+          id: v_bl
+          text: !lambda |-
+            if (std::isnan(id(bl_level).state)) return std::string("BACKLIGHT");
+            return str_sprintf("BACKLIGHT %.0f%%", id(bl_level).state);
       - lvgl.matrix.button.update:
           id: emu_b1
           control:
@@ -231,7 +238,6 @@ display:
       blue: [4, 5, 6, 7, 15]
   - platform: vnc
     id: vnc_display
-    compression: true
     password: !secret vnc_password
     dimensions:
       width: 480
@@ -243,9 +249,7 @@ display:
             - lvgl.resume:
             - lvgl.widget.redraw:
             - script.execute: render_events
-            - light.turn_on:
-                id: display_backlight
-                transition_length: 300ms
+            - script.execute: wake_backlight
 
 touchscreen:
   - platform: gt911
@@ -262,7 +266,7 @@ touchscreen:
             - lvgl.resume:
             - lvgl.widget.redraw:
             - script.execute: render_events
-            - light.turn_on: { id: display_backlight, transition_length: 300ms }
+            - script.execute: wake_backlight
   - platform: vnc
     id: vnc_touch
     display: vnc_display
@@ -273,9 +277,7 @@ touchscreen:
             - lvgl.resume:
             - lvgl.widget.redraw:
             - script.execute: render_events
-            - light.turn_on:
-                id: display_backlight
-                transition_length: 300ms
+            - script.execute: wake_backlight
 
 # --- Typography of the reference design ----------------------------------------
 # The reference ships Inter Medium 14/16/18 for text and Inter Display SemiBold 32/48
@@ -834,18 +836,28 @@ espnow:
               put(id(v_pow), pt);  col(id(v_pow), fcol);
               put(id(v_cur), ct);  col(id(v_cur), fcol);
 
-              // Bottom card. Out-of-range cells go red against pack 1's design limits,
-              // or the reference's 3.000 / 4.250 V while those are not known.
-              const int hi_lim = id(cell_lim_hi)[0] > 0 ? id(cell_lim_hi)[0] : 4250;
-              const int lo_lim = id(cell_lim_lo)[0] > 0 ? id(cell_lim_lo)[0] : 3000;
-              if (cmax > 0) { putf(id(v_cmax), "MAX %.3f V", cmax / 1000.0f);
-                              col(id(v_cmax), cmax > hi_lim ? 0x${c_red} : 0x${c_green}); }
-              if (cmin > 0) { putf(id(v_cmin), "MIN  %.3f V", cmin / 1000.0f);
-                              col(id(v_cmin), cmin < lo_lim ? 0x${c_red} : 0x${c_blue}); }
-              if (cmax > 0 && cmin > 0) {
-                const int d = cmax - cmin;
-                putf(id(v_delta), "Δ %d mV", d);
-                col(id(v_delta), d <= 20 ? 0x${c_green} : d <= 50 ? 0x${c_amber} : 0x${c_red});
+              // Bottom card. One pack: cell max / min and delta. Several packs: the
+              // installation's scaled energy and power limits instead - the cells are on
+              // the BATTERIES and CELL MONITOR pages. render_link picks the visible set.
+              if (multi) {
+                if (!std::isnan(rremw)) putf(id(v_mrem), "rem. %.1f kWh", rremw / 1000.0f);
+                if (!std::isnan(rcapw)) putf(id(v_mtot), "tot. %.1f kWh", rcapw / 1000.0f);
+                if (!std::isnan(mdw))   putf(id(v_mdis), "max dis %.1f kW", mdw / 1000.0f);
+                if (!std::isnan(mcw))   putf(id(v_mchg), "max chg %.1f kW", mcw / 1000.0f);
+              } else {
+                // Out-of-range cells go red against pack 1's design limits, or the
+                // reference's 3.000 / 4.250 V while those are not known.
+                const int hi_lim = id(cell_lim_hi)[0] > 0 ? id(cell_lim_hi)[0] : 4250;
+                const int lo_lim = id(cell_lim_lo)[0] > 0 ? id(cell_lim_lo)[0] : 3000;
+                if (cmax > 0) { putf(id(v_cmax), "MAX %.3f V", cmax / 1000.0f);
+                                col(id(v_cmax), cmax > hi_lim ? 0x${c_red} : 0x${c_green}); }
+                if (cmin > 0) { putf(id(v_cmin), "MIN  %.3f V", cmin / 1000.0f);
+                                col(id(v_cmin), cmin < lo_lim ? 0x${c_red} : 0x${c_blue}); }
+                if (cmax > 0 && cmin > 0) {
+                  const int d = cmax - cmin;
+                  putf(id(v_delta), "Δ %d mV", d);
+                  col(id(v_delta), d < 100 ? 0x${c_green} : d <= 300 ? 0x${c_amber} : 0x${c_red});
+                }
               }
               if (!std::isnan(tmax)) putf(id(v_temp), "%.1f°C", tmax);
 
@@ -903,15 +915,21 @@ espnow:
                   put(bt[ps], "NO LIVE DATA FROM THIS PACK");
                   col(bt[ps], 0x${c_red});
                 } else {
+                  // SoC, capacity and remaining are the scaled (reported) values, the
+                  // same kind MAIN shows for the installation. Power and current are
+                  // signed, + = charging; limits read discharge / charge.
                   const std::string t =
-                      "SOC " + fs("%.1f%%", soc) + "   REAL " + fs("%.1f%%", rsoc) +
-                      "   SOH " + fs("%.0f%%", soh) + "\n" +
-                      fs("%.1f V", volt) + "   " + fs("%+.2f kW", pw / 1000.0f) + "   " +
-                      fs("%+.1f A", cur) + "\nCELL " +
-                      fs("%.3f", cmin > 0 ? cmin / 1000.0f : NAN) + " - " +
-                      fs("%.3f V", cmax > 0 ? cmax / 1000.0f : NAN) + "   Δ " +
-                      fs("%.0f mV", (cmin > 0 && cmax > 0) ? (float)(cmax - cmin) : NAN) +
-                      "   " + fs("%.1f", tmin) + " - " + fs("%.1f °C", tmax);
+                      "SoH " + fs("%.1f%%", soh) + ", SoC " + fs("%.1f%%", soc) +
+                      ", Cap. " + fs("%.1f", rcapw / 1000.0f) + " kWh rem. " +
+                      fs("%.1f", rremw / 1000.0f) + " kWh\n" +
+                      fs("%+.1f", pw / 1000.0f) + "kW, " + fs("%+.1f", cur) +
+                      "A, max dis/ch: " + fs("%.1f", mdw / 1000.0f) + "/" +
+                      fs("%.1f", mcw / 1000.0f) + "kW; " + fs("%.1f", mda) + "/" +
+                      fs("%.1f", mca) + "A\nCells " +
+                      fs("%.0f", cmin > 0 ? (float)cmin : NAN) + "/" +
+                      fs("%.0f", cmax > 0 ? (float)cmax : NAN) + " mV, Δ " +
+                      fs("%.0f", (cmin > 0 && cmax > 0) ? (float)(cmax - cmin) : NAN) +
+                      " mV, Temp " + fs("%.1f", tmin) + "/" + fs("%.1f", tmax) + " °C";
                   put(bt[ps], t.c_str());
                   col(bt[ps], chg == 1 ? 0x${c_green} : chg == 2 ? 0x${c_blue} : 0xFFFFFF);
                 }
@@ -986,16 +1004,17 @@ espnow:
 
 script:
   # Adopts the emulator called `name`, which is the mapping key. Each matrix button passes
-  # its own label, so nothing here has to interrogate the widget.
+  # its own label, so nothing here has to interrogate the widget. Tapping the emulator
+  # already watched (e.g. to leave the Display card) only switches the card back.
   - id: select_emulator
     mode: restart
     parameters:
       name: string
     then:
+      - script.execute:
+          id: show_sys_view
+          view: 0
       - lambda: |-
-          id(sel_name) = name;
-          id(emu_index) = name == "${emulator_2_name}" ? 1 : name == "${emulator_3_name}" ? 2 : 0;
-          lv_label_set_text(id(v_emu), name.c_str());
           // Mapping returns a std::string; parse it into the 6 bytes the filter compares.
           // A malformed entry would otherwise leave a half-written MAC, so write only on
           // a complete parse.
@@ -1006,9 +1025,29 @@ script:
             ESP_LOGW("emu", "no usable MAC for '%s'", name.c_str());
             return;
           }
+          bool same = true;
+          for (int k = 0; k < 6; k++) same = same && id(sel_mac)[k] == (uint8_t)b[k];
+          if (same) return;
+          id(sel_name) = name;
+          id(emu_index) = name == "${emulator_2_name}" ? 1 : name == "${emulator_3_name}" ? 2 : 0;
           for (int k = 0; k < 6; k++) id(sel_mac)[k] = (uint8_t)b[k];
-      # Everything on screen belongs to the emulator we just left.
-      - script.execute: reset_view
+          // Everything on screen belongs to the emulator we just left.
+          id(reset_view).execute();
+
+  # SYSTEM page: 0 = the watched emulator's card, 1 = this display's card.
+  - id: show_sys_view
+    mode: restart
+    parameters:
+      view: int
+    then:
+      - lambda: |-
+          if (view == 1) {
+            lv_obj_add_flag(id(sys_emu), LV_OBJ_FLAG_HIDDEN);
+            lv_obj_remove_flag(id(sys_disp), LV_OBJ_FLAG_HIDDEN);
+          } else {
+            lv_obj_add_flag(id(sys_disp), LV_OBJ_FLAG_HIDDEN);
+            lv_obj_remove_flag(id(sys_emu), LV_OBJ_FLAG_HIDDEN);
+          }
 
   # DISPLAY MENU "NEXT EMULATOR": steps through the selector and checks its button,
   # exactly as if that button had been tapped on the SYSTEM page.
@@ -1065,6 +1104,8 @@ script:
           struct { lv_obj_t* l; const char* t; } blank[] = {
             {id(v_cmax), "MAX -- V"}, {id(v_cmin), "MIN  -- V"}, {id(v_delta), "Δ -- mV"},
             {id(v_temp), "--.-°C"},
+            {id(v_mrem), "rem. -- kWh"}, {id(v_mtot), "tot. -- kWh"},
+            {id(v_mdis), "max dis -- kW"}, {id(v_mchg), "max chg -- kW"},
             {id(bt_1), "WAITING FOR DATA"}, {id(bt_2), "WAITING FOR DATA"},
             {id(bt_3), "WAITING FOR DATA"},
             {id(c_tmp_v), "--\n--"},
@@ -1123,6 +1164,7 @@ script:
             - lvgl.page.show: pg_main
       - script.execute: update_dots
       - script.execute: render_cells
+      - script.execute: render_link    # MAIN's bottom card depends on the pack count
 
   # Picks the pack shown on CELL MONITOR and BATTERY INFO. The per-pack readings of the
   # previous pack are blanked; that pack's next BATTERY frame (within a second)
@@ -1255,9 +1297,16 @@ script:
       - lambda: |-
           const bool on = id(be1_online).state;
           const bool live = on && id(m_live);
-          lv_obj_t* metrics[] = {id(v_cmax), id(v_cmin), id(v_delta), id(v_temp), id(sep_a), id(sep_b)};
+          const bool multi = id(n_bat) > 1;
+          // Bottom card: one pack shows cell max / min / delta, several packs show the
+          // installation's energy and power limits. Temperature and the rules are shared.
+          auto show = [](lv_obj_t* o, bool s) {
+            if (s) lv_obj_remove_flag(o, LV_OBJ_FLAG_HIDDEN); else lv_obj_add_flag(o, LV_OBJ_FLAG_HIDDEN);
+          };
+          for (auto* o : {id(v_cmax), id(v_cmin), id(v_delta)}) show(o, live && !multi);
+          for (auto* o : {id(v_mrem), id(v_mtot), id(v_mdis), id(v_mchg)}) show(o, live && multi);
+          for (auto* o : {id(v_temp), id(sep_a), id(sep_b)}) show(o, live);
           if (live) {
-            for (auto* m : metrics) lv_obj_remove_flag(m, LV_OBJ_FLAG_HIDDEN);
             lv_obj_add_flag(id(v_offline), LV_OBJ_FLAG_HIDDEN);
             lv_obj_set_style_border_color(id(main_bottom), lv_color_hex(0x${c_line}), 0);
             return;
@@ -1271,7 +1320,6 @@ script:
           lv_label_set_text(id(v_cur), "-- A");
           lv_obj_t* reds[] = {id(v_soc), id(v_volt), id(v_pow), id(v_cur)};
           for (auto* l : reds) lv_obj_set_style_text_color(l, red, 0);
-          for (auto* m : metrics) lv_obj_add_flag(m, LV_OBJ_FLAG_HIDDEN);
           std::string t;
           if (!on) {
             t = "NO LIVE DATA\nCRITICAL  No ESP-NOW frames from " + id(sel_name);
@@ -1310,6 +1358,9 @@ script:
             if ((s == 2 || s == 4) && (st == 2 || st == 3) && !id(ev_name)[k].empty()) { w = k; break; }
           }
           lv_obj_t *mx = id(v_cmax), *mn = id(v_cmin);
+          // The two-line columns of the multi-pack card: top row, bottom row.
+          lv_obj_t* top[2] = {id(v_mrem), id(v_mdis)};
+          lv_obj_t* bot[2] = {id(v_mtot), id(v_mchg)};
           if (w < 0) {
             lv_obj_add_flag(id(warn_bar), LV_OBJ_FLAG_HIDDEN);
             lv_obj_set_y(id(main_bottom), 365);
@@ -1320,6 +1371,12 @@ script:
             lv_obj_set_y(mn, 38);
             lv_obj_set_y(id(v_delta), 18);
             lv_obj_set_y(id(v_temp), 14);
+            for (int k = 0; k < 2; k++) {
+              lv_obj_set_style_text_font(top[k], id(inter_18)->get_lv_font(), 0);
+              lv_obj_set_style_text_font(bot[k], id(inter_18)->get_lv_font(), 0);
+              lv_obj_set_y(top[k], 9);
+              lv_obj_set_y(bot[k], 39);
+            }
             return;
           }
           const bool err = id(ev_sev)[w] == 4;
@@ -1340,6 +1397,12 @@ script:
           lv_obj_set_y(mn, 29);
           lv_obj_set_y(id(v_delta), 11);
           lv_obj_set_y(id(v_temp), 8);
+          for (int k = 0; k < 2; k++) {
+            lv_obj_set_style_text_font(top[k], id(inter_16)->get_lv_font(), 0);
+            lv_obj_set_style_text_font(bot[k], id(inter_16)->get_lv_font(), 0);
+            lv_obj_set_y(top[k], 5);
+            lv_obj_set_y(bot[k], 30);
+          }
 
   # Header direction text and flow arrow. The arrow never animates - it only turns;
   # the energy flow is animated inside the battery by paint_battery.
@@ -1435,7 +1498,7 @@ script:
           const int d = hi - lo;
           lv_label_set_text_fmt(id(c_dlt_v), "Δ %d mV", d);
           lv_obj_set_style_text_color(id(c_dlt_v),
-              lv_color_hex(d <= 20 ? 0x${c_green} : d <= 50 ? 0x${c_amber} : 0x${c_red}), 0);
+              lv_color_hex(d < 100 ? 0x${c_green} : d <= 300 ? 0x${c_amber} : 0x${c_red}), 0);
 
           // Tags over the lowest / highest bar. Same geometry as the draw event; two
           // nearby extremes sit side by side instead of on top of each other.
@@ -1621,6 +1684,30 @@ script:
       - delay: 4s
       - lvgl.widget.hide: v_toast
 
+  # Backlight back on after sleep, at the level stored by the SYSTEM > Display slider.
+  - id: wake_backlight
+    mode: restart
+    then:
+      - light.turn_on:
+          id: display_backlight
+          transition_length: 300ms
+          brightness: !lambda 'return std::isnan(id(bl_level).state) ? 1.0f : id(bl_level).state / 100.0f;'
+
+  # SYSTEM > Display "FREE HEAP": internal RAM, plus PSRAM once that has reported.
+  - id: render_heap
+    then:
+      - lvgl.label.update:
+          id: v_dheap
+          text: !lambda |-
+            const float f = id(dsp_free).state, p = id(dsp_psram).state;
+            if (std::isnan(f)) return std::string("--");
+            char b[40];
+            if (std::isnan(p))
+              snprintf(b, sizeof(b), "%.1f kB", f / 1024.0f);
+            else
+              snprintf(b, sizeof(b), "%.1f kB | PSRAM %.2f MB", f / 1024.0f, p / 1048576.0f);
+            return std::string(b);
+
   - id: screen_off
     mode: restart
     then:
@@ -1711,9 +1798,82 @@ text_sensor:
     ssid:
       name: "Connected SSID"
       entity_category: diagnostic
+      on_value:
+        - lvgl.label.update:
+            id: v_dssid
+            text: !lambda 'return x;'
     mac_address:
       name: "Mac Address"
       entity_category: diagnostic
+      on_value:
+        - lvgl.label.update:
+            id: v_dmac
+            text: !lambda 'return x;'
+
+# --- This display's own diagnostics, shown on SYSTEM > Display --------------------
+debug:
+  update_interval: 5s
+
+sensor:
+  - platform: wifi_signal
+    name: "WiFi Signal"
+    id: wifi_rssi
+    update_interval: 10s
+    entity_category: diagnostic
+    on_value:
+      - lvgl.label.update:
+          id: v_drssi
+          text:
+            format: "%.0f dBm"
+            args: [ x ]
+  - platform: uptime
+    id: dsp_uptime                # internal: only the Display card uses it
+    update_interval: 1s
+    on_value:
+      - lvgl.label.update:
+          id: v_dup
+          text: !lambda |-
+            const uint32_t s = (uint32_t) x;
+            char b[24];
+            if (s >= 86400)
+              snprintf(b, sizeof(b), "%ud %02u:%02u:%02u", (unsigned)(s / 86400),
+                       (unsigned)((s / 3600) % 24), (unsigned)((s / 60) % 60), (unsigned)(s % 60));
+            else
+              snprintf(b, sizeof(b), "%02u:%02u:%02u", (unsigned)(s / 3600),
+                       (unsigned)((s / 60) % 60), (unsigned)(s % 60));
+            return std::string(b);
+  # Internal RAM is what the RGB panel, LVGL and Wi-Fi compete for; PSRAM for context.
+  - platform: debug
+    free:
+      id: dsp_free
+      on_value: [ script.execute: render_heap ]
+    psram:
+      id: dsp_psram
+      on_value: [ script.execute: render_heap ]
+
+# Backlight level, set with the slider on SYSTEM > Display. Stored in flash and restored
+# at boot; the slider itself stops at 90 %.
+number:
+  - platform: lvgl
+    widget: bl_slider
+    id: bl_level
+    name: "Display brightness"
+    restore_value: true
+    on_value:
+      - lvgl.label.update:
+          id: v_bl
+          text:
+            format: "BACKLIGHT %.0f%%"
+            args: [ x ]
+      # While the screen sleeps the level is only stored; waking applies it.
+      - if:
+          condition:
+            light.is_on: display_backlight
+          then:
+            - light.turn_on:
+                id: display_backlight
+                brightness: !lambda 'return x / 100.0f;'
+                transition_length: 150ms
 
 # --- LVGL: the reference design ------------------------------------------------
 lvgl:
@@ -1947,6 +2107,8 @@ lvgl:
         # ---- cell max / min | delta | temperature ----
         # The readings need no headings (reference v15.8), which leaves room for large
         # figures. MAX and MIN open the cell monitor on that very cell.
+        # With several packs the first two columns show the installation's scaled
+        # energy and its power limits instead (render_link swaps the two sets).
         - obj:
             id: main_bottom
             styles: st_card
@@ -1978,6 +2140,10 @@ lvgl:
                   text_color: "0x${c_muted}"
                   on_click:
                     - script.execute: { id: focus_extreme, want_max: false }
+              - label: { id: v_mrem, x: 4, y: 9, width: 142, text: "rem. -- kWh", text_align: CENTER, text_font: inter_18, text_color: "0x${c_blue}", hidden: true }
+              - label: { id: v_mtot, x: 4, y: 39, width: 142, text: "tot. -- kWh", text_align: CENTER, text_font: inter_18, text_color: "0x${c_blue}", hidden: true }
+              - label: { id: v_mdis, x: 150, y: 9, width: 160, text: "max dis -- kW", text_align: CENTER, text_font: inter_18, text_color: "0x${c_blue}", hidden: true }
+              - label: { id: v_mchg, x: 150, y: 39, width: 160, text: "max chg -- kW", text_align: CENTER, text_font: inter_18, text_color: "0x${c_green}", hidden: true }
               - obj: { id: sep_a, styles: st_rule, x: 150, y: 12, width: 1, height: 50 }
               - label: { id: v_delta, x: 150, y: 18, width: 160, text: "Δ -- mV", text_align: CENTER, text_font: inter_d32, text_color: "0x${c_muted}" }
               - obj: { id: sep_b, styles: st_rule, x: 310, y: 12, width: 1, height: 50 }
@@ -2037,7 +2203,7 @@ lvgl:
               - lvgl.page.show: pg_cells
             widgets:
               - label: { x: 15, y: 9, text: "BATTERY 1", text_font: montserrat_18, text_color: "0x${c_green}" }
-              - label: { id: bt_1, x: 15, y: 38, width: 430, text: "WAITING FOR DATA", text_font: inter_16, text_line_space: 4, text_color: "0x${c_muted}" }
+              - label: { id: bt_1, x: 15, y: 38, width: 436, text: "WAITING FOR DATA", text_font: inter_14, text_line_space: 6, text_color: "0x${c_muted}" }
         - obj:
             id: bc_2
             styles: st_card
@@ -2053,7 +2219,7 @@ lvgl:
               - lvgl.page.show: pg_cells
             widgets:
               - label: { x: 15, y: 9, text: "BATTERY 2", text_font: montserrat_18, text_color: "0x${c_blue}" }
-              - label: { id: bt_2, x: 15, y: 38, width: 430, text: "WAITING FOR DATA", text_font: inter_16, text_line_space: 4, text_color: "0x${c_muted}" }
+              - label: { id: bt_2, x: 15, y: 38, width: 436, text: "WAITING FOR DATA", text_font: inter_14, text_line_space: 6, text_color: "0x${c_muted}" }
         - obj:
             id: bc_3
             styles: st_card
@@ -2069,7 +2235,7 @@ lvgl:
               - lvgl.page.show: pg_cells
             widgets:
               - label: { x: 15, y: 9, text: "BATTERY 3", text_font: montserrat_18, text_color: "0x${c_blue}" }
-              - label: { id: bt_3, x: 15, y: 38, width: 430, text: "WAITING FOR DATA", text_font: inter_16, text_line_space: 4, text_color: "0x${c_muted}" }
+              - label: { id: bt_3, x: 15, y: 38, width: 436, text: "WAITING FOR DATA", text_font: inter_14, text_line_space: 6, text_color: "0x${c_muted}" }
         - label: { x: 0, y: 440, width: 480, text: "TAP A BATTERY FOR ITS CELLS   |   SWIPE FOR MORE", text_align: CENTER, text_font: montserrat_12, text_color: "0x${c_muted}" }
 
     # =========================================================================
@@ -2520,8 +2686,10 @@ lvgl:
             height: 54
             widgets:
               - label: { x: 0, y: 8, width: 460, text: "SYSTEM", text_align: CENTER, text_font: inter_d32 }
-        # Diagnostics, scrolled vertically inside the card.
+        # Two cards in the same place; the checked selector button picks which one
+        # shows (show_sys_view). Emulator diagnostics scroll vertically in theirs.
         - obj:
+            id: sys_emu
             styles: st_card
             x: 10
             y: 72
@@ -2536,52 +2704,106 @@ lvgl:
             layout:
               type: GRID
               grid_columns: [FR(40), FR(60)]
-              grid_rows: [22, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 34, 28, 28, 28, 28, 28, 34, 28]
+              grid_rows: [22, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 34, 28, 28, 28, 28, 28]
             widgets:
               - label: { text: "EMULATOR", text_font: montserrat_12, text_color: "0x${c_muted}", grid_cell_column_pos: 0, grid_cell_column_span: 2, grid_cell_row_pos: 0, grid_cell_y_align: END }
-              - label: { text: "NAME", text_font: montserrat_16, text_color: "0x${c_muted}", grid_cell_column_pos: 0, grid_cell_row_pos: 1, grid_cell_y_align: CENTER }
-              - label: { id: v_emu, text: "--", text_font: montserrat_16, grid_cell_column_pos: 1, grid_cell_row_pos: 1, grid_cell_x_align: END, grid_cell_y_align: CENTER }
-              - label: { text: "LINK", text_font: montserrat_16, text_color: "0x${c_muted}", grid_cell_column_pos: 0, grid_cell_row_pos: 2, grid_cell_y_align: CENTER }
-              - label: { id: v_link, text: "OFFLINE", text_font: montserrat_16, text_color: "0x${c_red}", grid_cell_column_pos: 1, grid_cell_row_pos: 2, grid_cell_x_align: END, grid_cell_y_align: CENTER }
-              - label: { text: "FRAMES", text_font: montserrat_16, text_color: "0x${c_muted}", grid_cell_column_pos: 0, grid_cell_row_pos: 3, grid_cell_y_align: CENTER }
-              - label: { id: v_frames, text: "0", text_font: montserrat_16, grid_cell_column_pos: 1, grid_cell_row_pos: 3, grid_cell_x_align: END, grid_cell_y_align: CENTER }
-              - label: { text: "FIRMWARE", text_font: montserrat_16, text_color: "0x${c_muted}", grid_cell_column_pos: 0, grid_cell_row_pos: 4, grid_cell_y_align: CENTER }
-              - label: { id: v_fw, text: "--", text_font: montserrat_16, long_mode: DOT, width: 100%, text_align: RIGHT, grid_cell_column_pos: 1, grid_cell_row_pos: 4, grid_cell_x_align: END, grid_cell_y_align: CENTER }
-              - label: { text: "HOSTNAME", text_font: montserrat_16, text_color: "0x${c_muted}", grid_cell_column_pos: 0, grid_cell_row_pos: 5, grid_cell_y_align: CENTER }
-              - label: { id: v_host, text: "--", text_font: montserrat_16, long_mode: DOT, width: 100%, text_align: RIGHT, grid_cell_column_pos: 1, grid_cell_row_pos: 5, grid_cell_x_align: END, grid_cell_y_align: CENTER }
+              - label: { text: "ESPNow", text_font: montserrat_16, text_color: "0x${c_muted}", grid_cell_column_pos: 0, grid_cell_row_pos: 1, grid_cell_y_align: CENTER }
+              - label: { id: v_link, text: "OFFLINE", text_font: montserrat_16, text_color: "0x${c_red}", grid_cell_column_pos: 1, grid_cell_row_pos: 1, grid_cell_x_align: END, grid_cell_y_align: CENTER }
+              - label: { text: "FRAMES", text_font: montserrat_16, text_color: "0x${c_muted}", grid_cell_column_pos: 0, grid_cell_row_pos: 2, grid_cell_y_align: CENTER }
+              - label: { id: v_frames, text: "0", text_font: montserrat_16, grid_cell_column_pos: 1, grid_cell_row_pos: 2, grid_cell_x_align: END, grid_cell_y_align: CENTER }
+              - label: { text: "FIRMWARE", text_font: montserrat_16, text_color: "0x${c_muted}", grid_cell_column_pos: 0, grid_cell_row_pos: 3, grid_cell_y_align: CENTER }
+              - label: { id: v_fw, text: "--", text_font: montserrat_16, long_mode: DOT, width: 100%, text_align: RIGHT, grid_cell_column_pos: 1, grid_cell_row_pos: 3, grid_cell_x_align: END, grid_cell_y_align: CENTER }
+              - label: { text: "HOSTNAME", text_font: montserrat_16, text_color: "0x${c_muted}", grid_cell_column_pos: 0, grid_cell_row_pos: 4, grid_cell_y_align: CENTER }
+              - label: { id: v_host, text: "--", text_font: montserrat_16, long_mode: DOT, width: 100%, text_align: RIGHT, grid_cell_column_pos: 1, grid_cell_row_pos: 4, grid_cell_x_align: END, grid_cell_y_align: CENTER }
+              - label: { text: "UPTIME", text_font: montserrat_16, text_color: "0x${c_muted}", grid_cell_column_pos: 0, grid_cell_row_pos: 5, grid_cell_y_align: CENTER }
+              - label: { id: v_uptime, text: "--", text_font: montserrat_16, grid_cell_column_pos: 1, grid_cell_row_pos: 5, grid_cell_x_align: END, grid_cell_y_align: CENTER }
+              - label: { text: "SYSTEM", text_font: montserrat_16, text_color: "0x${c_muted}", grid_cell_column_pos: 0, grid_cell_row_pos: 6, grid_cell_y_align: CENTER }
+              - label: { id: v_sysst, text: "--", text_font: montserrat_16, grid_cell_column_pos: 1, grid_cell_row_pos: 6, grid_cell_x_align: END, grid_cell_y_align: CENTER }
+              - label: { text: "STATUS", text_font: montserrat_16, text_color: "0x${c_muted}", grid_cell_column_pos: 0, grid_cell_row_pos: 7, grid_cell_y_align: CENTER }
+              - label: { id: v_emust, text: "--", text_font: montserrat_16, grid_cell_column_pos: 1, grid_cell_row_pos: 7, grid_cell_x_align: END, grid_cell_y_align: CENTER }
+              - label: { text: "PAUSE", text_font: montserrat_16, text_color: "0x${c_muted}", grid_cell_column_pos: 0, grid_cell_row_pos: 8, grid_cell_y_align: CENTER }
+              - label: { id: v_pause, text: "--", text_font: montserrat_16, grid_cell_column_pos: 1, grid_cell_row_pos: 8, grid_cell_x_align: END, grid_cell_y_align: CENTER }
+              - label: { text: "EVENT LEVEL", text_font: montserrat_16, text_color: "0x${c_muted}", grid_cell_column_pos: 0, grid_cell_row_pos: 9, grid_cell_y_align: CENTER }
+              - label: { id: v_evlvl, text: "--", text_font: montserrat_16, grid_cell_column_pos: 1, grid_cell_row_pos: 9, grid_cell_x_align: END, grid_cell_y_align: CENTER }
+              - label: { text: "CPU TEMP", text_font: montserrat_16, text_color: "0x${c_muted}", grid_cell_column_pos: 0, grid_cell_row_pos: 10, grid_cell_y_align: CENTER }
+              - label: { id: v_cpu, text: "--", text_font: montserrat_16, grid_cell_column_pos: 1, grid_cell_row_pos: 10, grid_cell_x_align: END, grid_cell_y_align: CENTER }
+              - label: { text: "FREE HEAP", text_font: montserrat_16, text_color: "0x${c_muted}", grid_cell_column_pos: 0, grid_cell_row_pos: 11, grid_cell_y_align: CENTER }
+              - label: { id: v_heap, text: "--", text_font: montserrat_16, grid_cell_column_pos: 1, grid_cell_row_pos: 11, grid_cell_x_align: END, grid_cell_y_align: CENTER }
+              - label: { text: "LED MODE", text_font: montserrat_16, text_color: "0x${c_muted}", grid_cell_column_pos: 0, grid_cell_row_pos: 12, grid_cell_y_align: CENTER }
+              - label: { id: v_led, text: "--", text_font: montserrat_16, grid_cell_column_pos: 1, grid_cell_row_pos: 12, grid_cell_x_align: END, grid_cell_y_align: CENTER }
+              - label: { text: "NETWORK", text_font: montserrat_12, text_color: "0x${c_muted}", grid_cell_column_pos: 0, grid_cell_column_span: 2, grid_cell_row_pos: 13, grid_cell_y_align: END }
+              - label: { text: "IP", text_font: montserrat_16, text_color: "0x${c_muted}", grid_cell_column_pos: 0, grid_cell_row_pos: 14, grid_cell_y_align: CENTER }
+              - label: { id: v_ip, text: "--", text_font: montserrat_16, grid_cell_column_pos: 1, grid_cell_row_pos: 14, grid_cell_x_align: END, grid_cell_y_align: CENTER }
+              - label: { text: "MAC", text_font: montserrat_16, text_color: "0x${c_muted}", grid_cell_column_pos: 0, grid_cell_row_pos: 15, grid_cell_y_align: CENTER }
+              - label: { id: v_mac, text: "--", text_font: montserrat_16, grid_cell_column_pos: 1, grid_cell_row_pos: 15, grid_cell_x_align: END, grid_cell_y_align: CENTER }
+              - label: { text: "SSID", text_font: montserrat_16, text_color: "0x${c_muted}", grid_cell_column_pos: 0, grid_cell_row_pos: 16, grid_cell_y_align: CENTER }
+              - label: { id: v_ssid, text: "--", text_font: montserrat_16, long_mode: DOT, width: 100%, text_align: RIGHT, grid_cell_column_pos: 1, grid_cell_row_pos: 16, grid_cell_x_align: END, grid_cell_y_align: CENTER }
+              - label: { text: "SIGNAL", text_font: montserrat_16, text_color: "0x${c_muted}", grid_cell_column_pos: 0, grid_cell_row_pos: 17, grid_cell_y_align: CENTER }
+              - label: { id: v_rssi, text: "--", text_font: montserrat_16, grid_cell_column_pos: 1, grid_cell_row_pos: 17, grid_cell_x_align: END, grid_cell_y_align: CENTER }
+              - label: { text: "AP MODE", text_font: montserrat_16, text_color: "0x${c_muted}", grid_cell_column_pos: 0, grid_cell_row_pos: 18, grid_cell_y_align: CENTER }
+              - label: { id: v_ap, text: "--", text_font: montserrat_16, grid_cell_column_pos: 1, grid_cell_row_pos: 18, grid_cell_x_align: END, grid_cell_y_align: CENTER }
+        # This display / ESPHome itself. Everything fits, so no scrolling here - which
+        # also keeps a drag on the slider from ever becoming a scroll.
+        - obj:
+            id: sys_disp
+            styles: st_card
+            scrollable: false
+            hidden: true
+            x: 10
+            y: 72
+            width: 460
+            height: 298
+            pad_left: 16
+            pad_right: 22
+            pad_top: 8
+            pad_bottom: 8
+            layout:
+              type: GRID
+              pad_row: 0
+              grid_columns: [FR(40), FR(60)]
+              grid_rows: [22, 44, 35, 35, 35, 35, 35, 35]
+            widgets:
+              - label: { text: "THIS DISPLAY", text_font: montserrat_12, text_color: "0x${c_muted}", grid_cell_column_pos: 0, grid_cell_column_span: 2, grid_cell_row_pos: 0, grid_cell_y_align: END }
+              - label: { id: v_bl, text: "BACKLIGHT", text_font: montserrat_16, text_color: "0x${c_muted}", grid_cell_column_pos: 0, grid_cell_row_pos: 1, grid_cell_y_align: CENTER }
+              # Bound to the bl_level number below, which stores the setting and
+              # restores it at boot. 90 % is the floor.
+              - slider:
+                  id: bl_slider
+                  min_value: 90
+                  max_value: 100
+                  value: 100
+                  height: 12
+                  gesture_bubble: false     # dragging it must not flip the page
+                  grid_cell_column_pos: 1
+                  grid_cell_row_pos: 1
+                  grid_cell_x_align: STRETCH
+                  grid_cell_y_align: CENTER
+                  bg_color: "0x${c_arc_bg}"
+                  bg_opa: COVER
+                  radius: 6
+                  indicator:
+                    bg_color: "0x${c_green}"
+                    radius: 6
+                  knob:
+                    bg_color: 0xFFFFFF
+                    border_width: 0
+                    shadow_width: 0
+                    pad_all: 6
+              - label: { text: "MAC ADDRESS", text_font: montserrat_16, text_color: "0x${c_muted}", grid_cell_column_pos: 0, grid_cell_row_pos: 2, grid_cell_y_align: CENTER }
+              - label: { id: v_dmac, text: "--", text_font: montserrat_16, grid_cell_column_pos: 1, grid_cell_row_pos: 2, grid_cell_x_align: END, grid_cell_y_align: CENTER }
+              - label: { text: "SSID", text_font: montserrat_16, text_color: "0x${c_muted}", grid_cell_column_pos: 0, grid_cell_row_pos: 3, grid_cell_y_align: CENTER }
+              - label: { id: v_dssid, text: "--", text_font: montserrat_16, long_mode: DOT, width: 100%, text_align: RIGHT, grid_cell_column_pos: 1, grid_cell_row_pos: 3, grid_cell_x_align: END, grid_cell_y_align: CENTER }
+              - label: { text: "WIFI SIGNAL", text_font: montserrat_16, text_color: "0x${c_muted}", grid_cell_column_pos: 0, grid_cell_row_pos: 4, grid_cell_y_align: CENTER }
+              - label: { id: v_drssi, text: "--", text_font: montserrat_16, grid_cell_column_pos: 1, grid_cell_row_pos: 4, grid_cell_x_align: END, grid_cell_y_align: CENTER }
+              - label: { text: "IP ADDRESS", text_font: montserrat_16, text_color: "0x${c_muted}", grid_cell_column_pos: 0, grid_cell_row_pos: 5, grid_cell_y_align: CENTER }
+              - label: { id: v_dip, text: "--", text_font: montserrat_16, grid_cell_column_pos: 1, grid_cell_row_pos: 5, grid_cell_x_align: END, grid_cell_y_align: CENTER }
               - label: { text: "UPTIME", text_font: montserrat_16, text_color: "0x${c_muted}", grid_cell_column_pos: 0, grid_cell_row_pos: 6, grid_cell_y_align: CENTER }
-              - label: { id: v_uptime, text: "--", text_font: montserrat_16, grid_cell_column_pos: 1, grid_cell_row_pos: 6, grid_cell_x_align: END, grid_cell_y_align: CENTER }
-              - label: { text: "SYSTEM", text_font: montserrat_16, text_color: "0x${c_muted}", grid_cell_column_pos: 0, grid_cell_row_pos: 7, grid_cell_y_align: CENTER }
-              - label: { id: v_sysst, text: "--", text_font: montserrat_16, grid_cell_column_pos: 1, grid_cell_row_pos: 7, grid_cell_x_align: END, grid_cell_y_align: CENTER }
-              - label: { text: "STATUS", text_font: montserrat_16, text_color: "0x${c_muted}", grid_cell_column_pos: 0, grid_cell_row_pos: 8, grid_cell_y_align: CENTER }
-              - label: { id: v_emust, text: "--", text_font: montserrat_16, grid_cell_column_pos: 1, grid_cell_row_pos: 8, grid_cell_x_align: END, grid_cell_y_align: CENTER }
-              - label: { text: "PAUSE", text_font: montserrat_16, text_color: "0x${c_muted}", grid_cell_column_pos: 0, grid_cell_row_pos: 9, grid_cell_y_align: CENTER }
-              - label: { id: v_pause, text: "--", text_font: montserrat_16, grid_cell_column_pos: 1, grid_cell_row_pos: 9, grid_cell_x_align: END, grid_cell_y_align: CENTER }
-              - label: { text: "EVENT LEVEL", text_font: montserrat_16, text_color: "0x${c_muted}", grid_cell_column_pos: 0, grid_cell_row_pos: 10, grid_cell_y_align: CENTER }
-              - label: { id: v_evlvl, text: "--", text_font: montserrat_16, grid_cell_column_pos: 1, grid_cell_row_pos: 10, grid_cell_x_align: END, grid_cell_y_align: CENTER }
-              - label: { text: "CPU TEMP", text_font: montserrat_16, text_color: "0x${c_muted}", grid_cell_column_pos: 0, grid_cell_row_pos: 11, grid_cell_y_align: CENTER }
-              - label: { id: v_cpu, text: "--", text_font: montserrat_16, grid_cell_column_pos: 1, grid_cell_row_pos: 11, grid_cell_x_align: END, grid_cell_y_align: CENTER }
-              - label: { text: "FREE HEAP", text_font: montserrat_16, text_color: "0x${c_muted}", grid_cell_column_pos: 0, grid_cell_row_pos: 12, grid_cell_y_align: CENTER }
-              - label: { id: v_heap, text: "--", text_font: montserrat_16, grid_cell_column_pos: 1, grid_cell_row_pos: 12, grid_cell_x_align: END, grid_cell_y_align: CENTER }
-              - label: { text: "LED MODE", text_font: montserrat_16, text_color: "0x${c_muted}", grid_cell_column_pos: 0, grid_cell_row_pos: 13, grid_cell_y_align: CENTER }
-              - label: { id: v_led, text: "--", text_font: montserrat_16, grid_cell_column_pos: 1, grid_cell_row_pos: 13, grid_cell_x_align: END, grid_cell_y_align: CENTER }
-              - label: { text: "NETWORK", text_font: montserrat_12, text_color: "0x${c_muted}", grid_cell_column_pos: 0, grid_cell_column_span: 2, grid_cell_row_pos: 14, grid_cell_y_align: END }
-              - label: { text: "IP", text_font: montserrat_16, text_color: "0x${c_muted}", grid_cell_column_pos: 0, grid_cell_row_pos: 15, grid_cell_y_align: CENTER }
-              - label: { id: v_ip, text: "--", text_font: montserrat_16, grid_cell_column_pos: 1, grid_cell_row_pos: 15, grid_cell_x_align: END, grid_cell_y_align: CENTER }
-              - label: { text: "MAC", text_font: montserrat_16, text_color: "0x${c_muted}", grid_cell_column_pos: 0, grid_cell_row_pos: 16, grid_cell_y_align: CENTER }
-              - label: { id: v_mac, text: "--", text_font: montserrat_16, grid_cell_column_pos: 1, grid_cell_row_pos: 16, grid_cell_x_align: END, grid_cell_y_align: CENTER }
-              - label: { text: "SSID", text_font: montserrat_16, text_color: "0x${c_muted}", grid_cell_column_pos: 0, grid_cell_row_pos: 17, grid_cell_y_align: CENTER }
-              - label: { id: v_ssid, text: "--", text_font: montserrat_16, long_mode: DOT, width: 100%, text_align: RIGHT, grid_cell_column_pos: 1, grid_cell_row_pos: 17, grid_cell_x_align: END, grid_cell_y_align: CENTER }
-              - label: { text: "SIGNAL", text_font: montserrat_16, text_color: "0x${c_muted}", grid_cell_column_pos: 0, grid_cell_row_pos: 18, grid_cell_y_align: CENTER }
-              - label: { id: v_rssi, text: "--", text_font: montserrat_16, grid_cell_column_pos: 1, grid_cell_row_pos: 18, grid_cell_x_align: END, grid_cell_y_align: CENTER }
-              - label: { text: "AP MODE", text_font: montserrat_16, text_color: "0x${c_muted}", grid_cell_column_pos: 0, grid_cell_row_pos: 19, grid_cell_y_align: CENTER }
-              - label: { id: v_ap, text: "--", text_font: montserrat_16, grid_cell_column_pos: 1, grid_cell_row_pos: 19, grid_cell_x_align: END, grid_cell_y_align: CENTER }
-              - label: { text: "THIS DISPLAY", text_font: montserrat_12, text_color: "0x${c_muted}", grid_cell_column_pos: 0, grid_cell_column_span: 2, grid_cell_row_pos: 20, grid_cell_y_align: END }
-              - label: { text: "IP", text_font: montserrat_16, text_color: "0x${c_muted}", grid_cell_column_pos: 0, grid_cell_row_pos: 21, grid_cell_y_align: CENTER }
-              - label: { id: v_dip, text: "--", text_font: montserrat_16, grid_cell_column_pos: 1, grid_cell_row_pos: 21, grid_cell_x_align: END, grid_cell_y_align: CENTER }
-        # Emulator selector, where the reference has its CONNECTION SETUP button.
-        # one_checked makes the matrix behave as a radio group: checking a button
-        # clears the others, so exactly one emulator is ever active.
+              - label: { id: v_dup, text: "--", text_font: montserrat_16, grid_cell_column_pos: 1, grid_cell_row_pos: 6, grid_cell_x_align: END, grid_cell_y_align: CENTER }
+              - label: { text: "FREE HEAP", text_font: montserrat_16, text_color: "0x${c_muted}", grid_cell_column_pos: 0, grid_cell_row_pos: 7, grid_cell_y_align: CENTER }
+              - label: { id: v_dheap, text: "--", text_font: montserrat_16, grid_cell_column_pos: 1, grid_cell_row_pos: 7, grid_cell_x_align: END, grid_cell_y_align: CENTER }
+        # Selector, where the reference has its CONNECTION SETUP button. one_checked
+        # makes the matrix a radio group, and the checked button names the card on
+        # show: an emulator (tapping one also starts watching it) or this display.
         - buttonmatrix:
             id: emu_sel
             x: 10
@@ -2590,7 +2812,7 @@ lvgl:
             height: 62
             one_checked: true
             pad_all: 0
-            pad_column: 10
+            pad_column: 8
             border_width: 0
             bg_opa: TRANSP
             items:
@@ -2635,3 +2857,11 @@ lvgl:
                       - script.execute:
                           id: select_emulator
                           name: "${emulator_3_name}"
+                  # Shows this display's card. The watched emulator does not change.
+                  - id: disp_b
+                    text: "Display"
+                    control: [ checkable: true ]
+                    on_click:
+                      - script.execute:
+                          id: show_sys_view
+                          view: 1

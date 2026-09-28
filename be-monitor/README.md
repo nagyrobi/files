@@ -28,14 +28,17 @@ Swipe left or right; the pages wrap around. You can also tap a page dot.
 
 | Page | Content |
 |---|---|
-| MAIN | Status header with an animated battery, flow arrow, direction and emulator status. SOC arc with pack voltage, power, current, cell max/min, Δ and max temperature. Tap MAX or MIN to jump to that cell. An amber bar (red for errors) links to an active event. |
-| BATTERIES | One card per pack. Only in the rotation when the emulator reports more than one pack. Tap a card to open its cells. |
+| MAIN | Status header with an animated battery, flow arrow, direction and emulator status. SOC arc with pack voltage, power, current, cell max/min, Δ (green below 100 mV, amber up to 300 mV, red above) and max temperature. Tap MAX or MIN to jump to that cell. With several packs, the cell columns show the installation's scaled remaining/total energy and max discharge/charge power instead. An amber bar (red for errors) links to an active event. |
+| BATTERIES | One card per pack: SoH, SoC, scaled capacity and remaining energy; power, current and max discharge/charge power and current; cell min/max, Δ and temperature range. Only in the rotation when the emulator reports more than one pack. Tap a card to open its cells. |
 | CELL MONITOR | All cells of the selected pack. Lowest and highest cells are marked, and balancing cells have amber caps. Tap or drag across the bars to read single cells; tap the title for the next pack. |
 | EVENTS | The emulator's 10 newest events with severity, state, count, age and message. |
 | BATTERY INFO | Contactors, BMS, battery/inverter CAN, DC bus, E-stop, SOH, charge/discharge limits, balancing, CAN errors and isolation for the selected pack. |
 | ENERGY | Remaining, total and reported energy, lifetime charged/discharged, limiting factor and user overrides. |
 | DISPLAY MENU | Shortcuts to every page, next emulator, screen off. |
-| SYSTEM | Emulator and network diagnostics, plus the emulator selector. |
+| SYSTEM | The buttons at the bottom pick the card. An emulator button starts watching that emulator and shows its ESP-NOW link, frames, firmware, hostname, uptime, status, heap, LED mode and network. **Display** shows this panel: a backlight slider (90–100 %, kept across reboots), MAC address, SSID, Wi-Fi signal, IP address, uptime and free heap. |
+
+The backlight level is also exposed to Home Assistant as the "Display brightness"
+number, next to the display's Wi-Fi signal, SSID, IP and MAC diagnostics.
 
 With one pack, MAIN and ENERGY show pack 1. With several packs they show the
 AGGREGATE frame (the installation as the inverter sees it), and the per-pack pages
@@ -58,7 +61,8 @@ TLV walk are kept. The tabview UI is replaced, and a few things are fixed:
   frames that pass the emulator filter count. Previously the follow-up actions also
   fired for frames from emulators that were not selected.
 - **VNC source.** `vnc` now comes from `nagyrobi/esphome-components` `main`. The
-  `feat/zlib-compression` branch no longer exists; `compression` is on `main`.
+  `feat/zlib-compression` branch no longer exists and compression was reverted
+  upstream, so the `compression` option is gone.
 - **Cell chart.** The chart is drawn by one widget's draw event instead of one
   widget per cell.
 
@@ -69,7 +73,9 @@ TLV walk are kept. The tabview UI is replaced, and a few things are fixed:
 - The UI was also built for ESPHome's `host` platform with an SDL display: the same
   LVGL YAML and lambdas, compiled against LVGL 9.5.0 with no warnings. A simulated
   emulator fed it real v2 TLV frames, and touch input was driven through the
-  window. The screenshots come from that build.
+  window (page swipes, taps, the emulator/Display buttons, dragging the backlight
+  slider and its restore after a restart). The screenshots come from that build;
+  the display's network values there are fixed samples.
 - **Not yet run on the physical panel.**
 
 ## Credits
